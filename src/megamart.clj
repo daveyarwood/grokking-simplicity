@@ -14,13 +14,11 @@
 
 (defn cart-total
   [{:keys [items]}]
-  (let [total* (reduce #(+ %1 (:price %2)) 0 items)
-        tax    (tax total*)]
-    (+ total* tax)))
+  (reduce #(+ %1 (:price %2)) 0 items))
 
 (defn free-shipping?
-  [total {:keys [price]}]
-  (-> total (+ price) (>= 20)))
+  [cart]
+  (<= 20 (cart-total cart)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -39,11 +37,14 @@
   [{:keys [cart catalog]}]
   (let [total (cart-total cart)]
     {:cart
-     (assoc cart :total total)
+     (assoc cart
+            :total total
+            :tax   (tax total))
 
      :catalog
-     (for [item catalog]
-       (assoc item :free-shipping? (free-shipping? total item)))}))
+     (for [item catalog
+           :let [cart-with-item (update cart :items concat [item])]]
+       (assoc item :free-shipping? (free-shipping? cart-with-item)))}))
 
 (comment
   (view @app-state)
